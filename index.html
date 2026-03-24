@@ -1,85 +1,89 @@
-n<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KoMo Pay - Admin</title>
+    <title>KoMo Pay - Console Admin</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; max-width: 450px; margin: 20px auto; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        .auth-box { background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-        label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; color: #4a5568; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #e2e8f0; box-sizing: border-box; }
-        .net-row { border-left: 4px solid #cbd5e0; padding-left: 15px; margin-top: 15px; }
-        button { width: 100%; background: #2f855a; color: white; border: none; padding: 16px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 25px; border-radius: 12px; }
-        #res { display: none; margin-top: 20px; padding: 15px; background: #f0fff4; border-radius: 12px; text-align: center; border: 1px solid #c6f6d5; }
-        .wa-btn { display: inline-block; background: #25D366; color: white; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; max-width: 500px; margin: 20px auto; padding: 20px; background: #eef2f3; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .auth-zone { background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 13px; color: #555; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .net-section { border-left: 4px solid #ddd; padding-left: 15px; margin-top: 15px; background: #f9f9f9; padding-bottom: 10px; border-radius: 5px; }
+        button { width: 100%; background: #2f855a; color: white; border: none; padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; border-radius: 8px; }
+        #result { display: none; margin-top: 20px; padding: 15px; background: #f0fff4; border: 1px solid #25D366; border-radius: 10px; text-align: center; }
+        .wa-link { display: inline-block; background: #075E54; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; margin-top:0;">🛡️ KoMo Terminal</h2>
+    <h2 style="text-align:center;">🛡️ KoMo Terminal</h2>
     
-    <div class="auth-box">
-        <label>🔑 Clé de Sécurité Admin</label>
-        <input type="password" id="pass" placeholder="Entrez votre code secret">
+    <div class="auth-zone">
+        <label>🔑 Code de Sécurité Admin</label>
+        <input type="password" id="adminPass" placeholder="Code secret">
     </div>
 
     <label>📞 WhatsApp Client</label>
-    <input type="number" id="cli" placeholder="228...">
+    <input type="number" id="numClient" placeholder="228xxxx">
 
-    <label>💰 Montant (FCFA)</label>
-    <input type="number" id="amt" placeholder="Ex: 10000">
+    <label>💰 Montant suggéré (FCFA)</label>
+    <input type="number" id="montant" placeholder="Ex: 5000">
 
-    <div class="net-row" style="border-color: #007bff;">
-        <label>🔵 Numéro Mixx (T-Money)</label>
-        <input type="number" id="nmixx" placeholder="90xxxxxx">
+    <div class="net-section" style="border-color: #007bff;">
+        <label>🔵 T-Money (Mixx)</label>
+        <input type="number" id="n1" placeholder="Numéro de réception">
+        <input type="text" id="id1" placeholder="Nom/Identité (ex: Jean P.)">
     </div>
 
-    <div class="net-row" style="border-color: #ffc107;">
-        <label>🟡 Numéro Flooz (Moov)</label>
-        <input type="number" id="nflooz" placeholder="98xxxxxx">
+    <div class="net-section" style="border-color: #ffc107;">
+        <label>🟡 Moov (Flooz)</label>
+        <input type="number" id="n2" placeholder="Numéro de réception">
+        <input type="text" id="id2" placeholder="Nom/Identité (ex: Boutique KoMo)">
     </div>
 
-    <button onclick="generer()">Générer le lien sécurisé</button>
+    <button onclick="validerEtGenerer()">Générer le lien sécurisé</button>
 
-    <div id="res">
-        <p style="color: #276749; font-weight: bold; margin: 0;">Lien authentifié prêt !</p>
+    <div id="result">
+        <p style="font-weight: bold;">Lien certifié prêt !</p>
         <div id="waArea"></div>
     </div>
 </div>
 
 <script>
-    const SECRET = "KOMO_PRO_2026"; // CHANGEZ CE CODE
+    const HASH_OFFICIEL = "c7921356f18378568600c00713370f7d54972e2938817a00f2142750e20f0e0e"; // fd2026!tg
 
-    // Crée un hash court basé sur les données et la clé secrète
-    function createSig(mt, n1, n2) {
-        const str = `${mt}|${n1}|${n2}|${SECRET}`;
-        return btoa(str).substring(0, 10); 
-    }
+    async function validerEtGenerer() {
+        const pass = document.getElementById('adminPass').value;
+        const msgUint8 = new TextEncoder().encode(pass);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    function generer() {
-        const p = document.getElementById('pass').value;
-        if(p !== SECRET) return alert("Accès refusé.");
+        if (hashHex !== HASH_OFFICIEL) return alert("❌ Code incorrect.");
 
-        const cli = document.getElementById('cli').value;
-        const mt = document.getElementById('amt').value;
-        const n1 = document.getElementById('nmixx').value || "0";
-        const n2 = document.getElementById('nflooz').value || "0";
+        const cli = document.getElementById('numClient').value;
+        const mt = document.getElementById('montant').value;
+        const n1 = document.getElementById('n1').value || "0";
+        const id1 = document.getElementById('id1').value || "";
+        const n2 = document.getElementById('n2').value || "0";
+        const id2 = document.getElementById('id2').value || "";
 
-        if(!cli || !mt || (n1==="0" && n2==="0")) return alert("Infos manquantes.");
-
-        const sig = createSig(mt, n1, n2);
-        const link = `payer.html?mt=${mt}&n1=${n1}&n2=${n2}&s=${sig}`;
+        // Signature excluant le montant pour permettre sa modification
+        const signature = btoa(`${n1}|${id1}|${n2}|${id2}|${pass}`).substring(0, 12);
         
-        const fullLink = window.location.href.replace('index.html', link);
-        const msg = `Lien de paiement sécurisé (${mt} F) : ${fullLink}`;
+        const params = new URLSearchParams({
+            mt: mt, n1: n1, id1: id1, n2: n2, id2: id2, s: signature
+        });
         
-        document.getElementById('waArea').innerHTML = `<a href="https://wa.me/${cli}?text=${encodeURIComponent(msg)}" target="_blank" class="wa-btn">Envoyer via WhatsApp</a>`;
-        document.getElementById('res').style.display = 'block';
+        const lien = window.location.href.replace('index.html', `transfer.html?${params.toString()}`);
+        const msg = `Bonjour, voici votre lien pour régler le transfert : ${lien}`;
+        
+        document.getElementById('waArea').innerHTML = `<a href="https://wa.me/${cli}?text=${encodeURIComponent(msg)}" target="_blank" class="wa-link">📲 Envoyer au client</a>`;
+        document.getElementById('result').style.display = 'block';
     }
 </script>
 </body>
 </html>
-
