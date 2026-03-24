@@ -64,35 +64,27 @@
 
         const cli = document.getElementById('numClient').value;
         const mt = document.getElementById('montant').value;
-        const n1 = document.getElementById('n1').value || "0";
+        const n1 = document.getElementById('n1').value || "";
         const id1 = document.getElementById('id1').value || "";
-        const n2 = document.getElementById('n2').value || "0";
+        const n2 = document.getElementById('n2').value || "";
         const id2 = document.getElementById('id2').value || "";
 
         if(!cli || !mt) return alert("Remplissez le client et le montant.");
 
-        // Création de la signature
-        const signature = btoa(n1 + id1 + n2 + id2 + CLE_ATTENDUE).substring(0, 10);
+        // On crée une chaîne unique qui contient TOUTES les infos de réception
+        const chaineASigner = n1 + "|" + id1 + "|" + n2 + "|" + id2 + "|" + CLE_ATTENDUE;
+        const signature = btoa(unescape(encodeURIComponent(chaineASigner))).substring(0, 15);
         
-        // Construction sécurisée de l'URL
         const params = new URLSearchParams({
-            mt: mt,
-            n1: n1,
-            id1: id1,
-            n2: n2,
-            id2: id2,
-            s: signature
+            mt: mt, n1: n1, id1: id1, n2: n2, id2: id2, s: signature
         });
 
-        // Cette ligne crée le lien correct peu importe le domaine (GitHub ou local)
-        const currentUrl = window.location.href;
-        const folderPath = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+        const folderPath = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
         const lienFinal = folderPath + "/transfer.html?" + params.toString();
         
         const message = "Bonjour, voici votre lien pour régler le transfert : " + lienFinal;
         
         document.getElementById('waArea').innerHTML = `
-            <div style="word-break: break-all; font-size:10px; color:#666; margin-bottom:10px;">${lienFinal}</div>
             <a href="https://wa.me/${cli}?text=${encodeURIComponent(message)}" target="_blank" class="wa-link">📲 Envoyer via WhatsApp</a>
         `;
         document.getElementById('result').style.display = 'block';
